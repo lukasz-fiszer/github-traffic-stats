@@ -4,10 +4,12 @@ from github import Github
 
 class GithubTraffic:
 
-	def __init__(self, data_handler):
+	def __init__(self, data_handler, utc_datetime, datetime_format):
 		self.config = self.get_json_config()
 		self.connector = self.get_github_connector()
 		self.data_handler = data_handler
+		self.utc_datetime = utc_datetime
+		self.datetime_format = datetime_format
 
 	def get_json_config(self, filepath='config.json'):
 		with open(filepath, 'r') as file:
@@ -68,8 +70,8 @@ class GithubTraffic:
 		}
 
 	def run(self):
-		current_datetime = datetime.utcnow()
-		current_datetime_string = current_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+		current_datetime = self.utc_datetime
+		current_datetime_string = self.utc_datetime.strftime(self.datetime_format)
 
 		print('Running')
 		print('Current utc datetime: ' + current_datetime_string)
@@ -102,10 +104,10 @@ class GithubTraffic:
 				paths_table.append(self.build_paths_row(name, path.path, path.title, path.count, path.uniques, current_datetime_string))
 
 			for clone in clones['clones']:
-				clones_table.append(self.build_clones_row(name, clone.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'), clone.count, clone.uniques, current_datetime_string))
+				clones_table.append(self.build_clones_row(name, clone.timestamp.strftime(self.datetime_format), clone.count, clone.uniques, current_datetime_string))
 
 			for view in views['views']:
-				views_table.append(self.build_views_row(name, view.timestamp.strftime('%Y-%m-%dT%H:%M:%SZ'), view.count, view.uniques, current_datetime_string))
+				views_table.append(self.build_views_row(name, view.timestamp.strftime(self.datetime_format), view.count, view.uniques, current_datetime_string))
 
 			print('\tClones {}, unique {}'.format(clones['count'], clones['uniques']))
 			print('\tViews {}, unique {}'.format(views['count'], views['uniques']))
