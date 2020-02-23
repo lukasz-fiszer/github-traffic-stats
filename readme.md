@@ -52,6 +52,7 @@ Test run
 
 Set up a `cron` job or `anacron` job, etc
 ```
-echo '@daily 5 github-traffic-stats $(cd /path/to/repo; ./runner.sh)' | sudo tee -a /etc/anacrontab
+# run github-traffic-stats named anacron job daily, using runner.sh in the repo directory
+echo '1 5 github-traffic-stats $(cd /path/to/repo; ./runner.sh)' | sudo tee -a /etc/anacrontab
 ```
 
