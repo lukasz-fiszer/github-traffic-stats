@@ -2,10 +2,14 @@
 
 save_stats_dir='save_stats/'
 logs_dir=logs
+db_backup_dir='db_backup'
+
 # utc_datetime=`date --utc +%FT%TZ`
 
 mkdir -p $save_stats_dir
 mkdir -p $logs_dir
+mkdir -p $db_backup_dir
+touch $save_stats_dir/'github-traffic-stats-history.sqlite'
 
 . venv/bin/activate
 python main.py | tee $logs_dir/stats-temp.txt
