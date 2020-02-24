@@ -84,7 +84,7 @@ class GithubTraffic:
 
 		repos = [repo for repo in self.connector.get_user().get_repos() if repo.owner.login == self.config['github-user']]
 
-		print('Repos count: {}'.format(len(repos)))
+		print('Repos count: {}'.format(len(repos)), flush=True)
 
 		for repo in repos:
 			print('Repo: ' + repo.full_name)
@@ -110,7 +110,7 @@ class GithubTraffic:
 				views_table.append(self.build_views_row(name, view.timestamp.strftime(self.datetime_format), view.count, view.uniques, current_datetime_string))
 
 			print('\tClones {}, unique {}'.format(clones['count'], clones['uniques']))
-			print('\tViews {}, unique {}'.format(views['count'], views['uniques']))
+			print('\tViews {}, unique {}'.format(views['count'], views['uniques']), flush=True)
 
 
 		print('Repos data downloaded')
@@ -131,9 +131,8 @@ class GithubTraffic:
 		sum_views = sum(total['count'] for total in totals_table if total['type'] == 'views')
 		sum_views_uniques = sum(total['uniques'] for total in totals_table if total['type'] == 'views')
 		print('\tSum clones {}, uniques {}'.format(sum_clones, sum_clones_uniques))
-		print('\tSum views {}, uniques {}'.format(sum_views, sum_views_uniques))
-
-
+		print('\tSum views {}, uniques {}'.format(sum_views, sum_views_uniques), flush=True)
+		
 
 		self.data_handler.handle(totals_table, referrers_table, paths_table, clones_table, views_table)
 		

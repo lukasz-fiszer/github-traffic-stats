@@ -7,7 +7,7 @@ class JsonHandler:
 		self.json_indent = json_indent
 
 	def handle(self, totals_table, referrers_table, paths_table, clones_table, views_table):
-		print('Json handler: saving data to ' + self.save_filepath)
+		print('Json handler: saving data to ' + self.save_filepath, flush=True)
 
 		data = {
 			'totals': totals_table,

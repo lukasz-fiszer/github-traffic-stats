@@ -12,7 +12,7 @@ class SqliteHandler:
 		return sqlite3.connect(db_filepath)
 
 	def handle(self, totals_table, referrers_table, paths_table, clones_table, views_table):
-		print('Sqlite handler: database {}, backup {}'.format(self.db_filepath, self.db_backup_directory))
+		print('Sqlite handler: database {}, backup {}'.format(self.db_filepath, self.db_backup_directory), flush=True)
 
 		self.create_schema_if_not_exists()
 
@@ -25,41 +25,25 @@ class SqliteHandler:
 
 		self.connection.commit()
 		self.connection.close()
-
-
-		data = {
-			'totals': totals_table,
-			'referrers': referrers_table,
-			'paths': paths_table,
-			'clones': clones_table,
-			'views': views_table
-		}
-
-		# with open(self.save_filepath, 'w+') as file:
-		# 	json.dump(data, file, indent=self.json_indent)
+		
 
 	def insert_totals(self, totals):
-		# params = [total.values() * 2 for total in totals]
 		params = [list(total.values()) * 2 for total in totals]
 		self.query_from_file('sql/insert-totals.sql', params, execute_many=True)
 
 	def insert_referrers(self, referrers):
-		# params = [referrer.values() * 2 for referrer in referrers]
 		params = [list(referrer.values()) * 2 for referrer in referrers]
 		self.query_from_file('sql/insert-referrers.sql', params, execute_many=True)
 
 	def insert_paths(self, paths):
-		# params = [path.values() * 2 for path in paths]
 		params = [list(path.values()) * 2 for path in paths]
 		self.query_from_file('sql/insert-paths.sql', params, execute_many=True)
 
 	def insert_clones(self, clones):
-		# params = [clone.values() * 2 + [clone['utc_datetime_update']] for clone in clones]
 		params = [list(clone.values()) * 2 + [clone['utc_datetime_update']] for clone in clones]
 		self.query_from_file('sql/insert-clones.sql', params, execute_many=True)
 
 	def insert_views(self, views):
-		# params = [view.values() * 2 + [view['utc_datetime_update']] for view in views]
 		params = [list(view.values()) * 2 + [view['utc_datetime_update']] for view in views]
 		self.query_from_file('sql/insert-views.sql', params, execute_many=True)
 
