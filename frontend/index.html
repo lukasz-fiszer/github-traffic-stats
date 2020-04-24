@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>GitHub Traffic stats history</title>
+
+	<style type="text/css">
+		body{
+			margin: 0px;
+			padding: 0px;
+		}
+
+		.header{
+			font-family: sans-serif;
+			text-align: center;
+			overflow: auto;
+			padding-bottom: 10px;
+			position: sticky;
+			top: 0px;
+			z-index: 9;
+			box-shadow: black 0px 2px 5px 0px;
+			background-color: #54abdd;
+		}
+		.header h1{
+			font-size: 1.6em;
+		}
+		.header h1, .header h4{
+			margin: 10px;
+		}
+		.header form .small-block:last-of-type{
+			padding-left: 5px;
+		}
+
+		.graph-container{
+			display: inline-block;
+			width: 50%;
+			/*width: 100%;*/
+		}
+
+		.graph-wrapper h4{
+			text-align: center;
+			font-family: sans-serif;
+		}
+		.graph-wrapper a{
+			text-decoration: none;
+			color: #0468d8;
+		}
+
+		@media only screen and (max-width: 600px){
+			.small-block{
+				display: block;
+				margin: 5px;
+			}
+		}
+
+		@media only screen and (min-width: 600px){
+			.small-only{
+				display: none;
+			}
+		}
+
+		.template-elements{
+			display: none;
+		}
+	</style>
+
+	<script src="repo-stats.js"></script>
+
+	<script src="https://cdn.jsdelivr.net/npm/frappe-charts@1.2.4/dist/frappe-charts.min.iife.js"></script>
+</head>
+<body>
+
+	<div class="header">
+		<h1>GitHub Traffic stats history</h1>
+		<h4>Data extracted: <span id="data-extracted"></span>, <br class="small-only" /> last traffic stats update: <span id="stats-update"></span></h4>
+		<form>
+			<span class="small-block"><label for="start-date">Start date: </label> <input type="date" name="start-date" id="start-date" /></span>
+			<span class="small-block"><label for="end-date">End date: </label> <input type="date" name="end-date" id="end-date" /></span>
+		</form>
+	</div>
+
+	<div class="container">
+
+	</div>
+
+	<div class="template-elements">
+		
+		<div class="graph-wrapper" id="template-graph-wrapper">
+			<h4><a href=""></a><p></p></h4>
+			<div class="graph-container"></div>
+			<div class="graph-container"></div>
+		</div>
+
+	</div>
+
+	<script type="text/javascript">
+		let dataExtractedElem = document.getElementById('data-extracted');
+		let statsUpdateElem = document.getElementById('stats-update');
+
+		dataExtractedElem.innerText = repoStats['utc_datetime'].replace('T', ' ').replace('Z', '');
+		statsUpdateElem.innerText = repoStats['last_update'].replace('T', ' ').replace('Z', '');
+	</script>
+
+	<script type="text/javascript">
+
+		function convertDatetime(datetime){
+			let date = new Date(datetime.slice(0, -1));
+			let dayName = date.toLocaleDateString('default', {weekday: 'long'});
+			let monthName = date.toLocaleDateString('default', {month: 'long'});
+			let datetimeString = `${dayName}, ${monthName} ${date.getDate()}, ${date.getFullYear()}`;
+			return datetimeString;
+		}
+
+		function createDivs(fullRepoName, repoId, repoUrl){
+
+			/*let templateDiv = document.querySelector('.template-elements #template-graph-wrapper');
+			let newDiv = templateDiv.cloneNode(true);
+			newDiv.id = repoName;
+			newDiv.querySelector('h4 a').href = repoUrl;
+			newDiv.querySelector('h4 a').innerText = fullrepoName;
+			newDiv.querySelectorAll('.graph-container')[0].id = repoName + '-clones';
+			newDiv.querySelectorAll('.graph-container')[1].id = repoName + '-views';
+
+			// let container = document.querySelector('.container');
+			// container.appendChild(newDiv);
+			let containerElem = document.querySelector('.container');
+			// containerElem.appendChild(newDiv);
+			// return;*/
+
+			let container = document.querySelector('.container');
+
+			let header = document.createElement('h4');
+			let href = document.createElement('a');
+			href.href = repoUrl;
+			href.innerText = fullRepoName;
+			header.appendChild(href);
+			let parStat = document.createElement('p');
+			header.appendChild(parStat);
+
+			let clones = document.createElement('div');
+			clones.id = repoId + '-clones';
+			clones.classList.add('graph-container');
+			let views = document.createElement('div');
+			views.id = repoId + '-views';
+			views.classList.add('graph-container');
+
+			let repoElem = document.createElement('div');
+			repoElem.classList.add('graph-wrapper');
+			repoElem.id = repoId;
+			repoElem.appendChild(header);
+			repoElem.appendChild(clones);
+			repoElem.appendChild(views);
+			container.appendChild(repoElem);
+
+			return repoElem;
+		}
+
+		function clearContainer(){
+			let container = document.querySelector('.container');
+			while(container.firstChild){
+				container.firstChild.remove();
+			}
+
+		}
+
+		let timeouts = {};
+		function callDebounce(callback, timeout){
+			if(callback in timeouts){
+				clearTimeout(timeouts[callback]);
+			}
+			timeouts[callback] = setTimeout(callback, timeout);
+		}
+
+		function createGraphs(repositories, startDatetime, endDatetime, rebuild = false){
+			let graphs = [];
+			if(rebuild == false){
+				clearContainer();
+			}
+
+			for(let fullRepoName in repositories){
+
+				let clonesData = repositories[fullRepoName].clones;
+				let viewsData = repositories[fullRepoName].views;
+
+				let entriesFilter = entry => (!startDatetime || startDatetime <= entry.timestamp)
+												&& (!endDatetime || entry.timestamp <= endDatetime);
+				clonesData = clonesData.filter(entriesFilter);
+				viewsData = viewsData.filter(entriesFilter);
+
+
+				let repoUrl = 'https://github.com/' + fullRepoName;
+				let repoId = fullRepoName.replace('/', '-');
+
+				if(rebuild == false){
+					createDivs(fullRepoName, repoId, repoUrl);
+				}
+				let repoElem = document.getElementById(repoId);
+
+				let viewsCount = viewsData.reduce((sum, entry) => sum + entry.count, 0);
+				let viewsUnique = viewsData.reduce((sum, entry) => sum + entry.uniques, 0);
+				let clonesCount = clonesData.reduce((sum, entry) => sum + entry.count, 0);
+				let clonesUnique = clonesData.reduce((sum, entry) => sum + entry.uniques, 0);
+
+				let statString = `Views ${viewsCount}, unique ${viewsUnique} / Clones ${clonesCount}, unique ${clonesUnique}`;
+
+				repoElem.querySelector('h4 p').innerText = statString;
+
+
+				function getLabels(repoData){
+					let labels = repoData.map(row => row.timestamp);
+					labels = labels.map(timestamp => {
+						let date = new Date(timestamp.slice(0, -1));
+						let day = ('0' + date.getDate()).slice(-2);
+						let month = ('0' + date.getMonth()).slice(-2);
+						return `${month}/${day}/${date.getFullYear()}`;
+					});
+					return labels;
+				}
+
+				const viewsObj = {
+					labels: viewsData.map(row => row.timestamp),
+					datasets: [
+						{
+							name: "Views", type: "line",
+							values: viewsData.map(row => row.count)
+						},
+						{
+							name: "Unique visitors", type: "line",
+							values: viewsData.map(row => row.uniques)
+						}
+					],
+				};
+
+				const clonesObj = {
+					labels: clonesData.map(row => row.timestamp),
+					datasets: [
+						{
+							name: "Clones", type: "line",
+							values: clonesData.map(row => row.count)
+						},
+						{
+							name: "Unique cloners", type: "line",
+							values: clonesData.map(row => row.uniques)
+						}
+					],
+				};
+
+				const clones = new frappe.Chart('#' + repoId + '-clones', {
+					title: fullRepoName + ' clones',
+					data: clonesObj,
+					type: 'axis-mixed',
+					height: 350,
+					colors: ['#28a745', '#005cc5'],
+					tooltipOptions: {
+						formatTooltipX: convertDatetime,
+					}
+				});
+
+				const views = new frappe.Chart('#' + repoId + '-views', {
+					title: fullRepoName + ' views',
+					data: viewsObj,
+					type: 'axis-mixed',
+					height: 350,
+					colors: ['#28a745', '#005cc5'],
+					tooltipOptions: {
+						formatTooltipX: convertDatetime,
+					}
+				});
+
+				graphs.push([clones, views]);
+			}
+			return graphs;
+		}
+
+		let graphs = createGraphs(repoStats['repos']);
+
+		let startDateSelector = document.getElementById('start-date');
+		let endDateSelector = document.getElementById('end-date');
+
+		let getDatetime = (selector) => {
+			let value = selector.value;
+			if(value){
+				value += 'T00:00:00Z';
+			}
+			return value;
+		};
+
+		let rebuildCharts = () => createGraphs(repoStats['repos'], getDatetime(startDateSelector),
+												getDatetime(endDateSelector), true);
+
+		startDateSelector.addEventListener('change', () => callDebounce(() => graphs = rebuildCharts(), 1000));
+		endDateSelector.addEventListener('change', () => callDebounce(() => graphs = rebuildCharts(), 1000));
+
+	</script>
+
+</body>
+</html>
