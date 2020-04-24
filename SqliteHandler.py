@@ -66,7 +66,7 @@ class SqliteHandler:
 		results = cursor.fetchall()
 		cursor.close()
 		if commit:
-			self.connect.commit()
+			self.connection.commit()
 		return results
 
 	def query(self, query, params=(), execute_script=False, commit=False):
